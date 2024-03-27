@@ -18,6 +18,8 @@ contract LiaoToken is IERC20 {
     mapping(address account => uint256) private _balances;
     mapping(address account => bool) isClaim;
 
+    mapping(address => mapping(address => uint256)) public _allowance;
+
     uint256 private _totalSupply;
 
     string private _name;
@@ -60,17 +62,42 @@ contract LiaoToken is IERC20 {
 
     function transfer(address to, uint256 amount) external returns (bool) {
         // TODO: please add your implementaiton here
+        _balances[msg.sender] -= amount;
+        _balances[to] += amount;
+        emit Transfer(msg.sender, to, amount);
+        return true;
     }
 
-    function transferFrom(address from, address to, uint256 value) external returns (bool) {
+    function transferFrom(address from, address to, uint256 amount) external returns (bool) {
         // TODO: please add your implementaiton here
+        uint256 allowed = _allowance[from][msg.sender]; // Saves gas for limited approvals.
+
+        if (allowed != type(uint256).max) _allowance[from][msg.sender] = allowed - amount;
+
+        _balances[from] -= amount;
+
+        // Cannot overflow because the sum of all user
+        // balances can't exceed the max uint256 value.
+        unchecked {
+            _balances[to] += amount;
+        }
+
+        emit Transfer(from, to, amount);
+
+        return true;
     }
 
     function approve(address spender, uint256 amount) external returns (bool) {
         // TODO: please add your implementaiton here
+        _allowance[msg.sender][spender] = amount;
+
+        emit Approval(msg.sender, spender, amount);
+
+        return true;
     }
 
     function allowance(address owner, address spender) public view returns (uint256) {
         // TODO: please add your implementaiton here
+        return _allowance[owner][spender];
     }
 }
